@@ -50,4 +50,85 @@ def getBooknamesFromAuthor(request):
         "message": f"{bookLists} of {authorName} retrieved successfully"
      })
 
+@csrf_exempt
+def updateAuthor(request):
+    authId = (json.loads(request.body))['authorId']
+    CN = (json.loads(request.body))['changedName']
+   
+    authObj = Author.objects.get(id = authId)
+    oldName = authObj.name
+    newName = Author.objects.filter(id=authId).update(name=CN)
+
+    return JsonResponse({
+        "message": f"{oldName} is replaced by {CN}"
+    })
+
+@csrf_exempt
+def deleteAuthor(request):
+    authId = (json.loads(request.body))['authorId']
+    authObj = Author.objects.get(id = authId)
+    name = authObj.name
+    authObj.delete()
+
+    return JsonResponse({
+        "message": f"{name} is deleted from the author table"
+    })
+
+@csrf_exempt
+def register(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "Message":"Method not supported",
+            "Status":"Failed"
+        },status = status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    else:
+        data = json.loads(request.body)
+        emaillll = data['email']
+        usernameeee = data['username']
+        passwordddd = data['password']
+
+        if not usernameeee or not emaillll or not passwordddd:
+            return JsonResponse({
+                "Message":"Inputs Fields should not be empty"
+            }, status = status.HTTP_400_BAD_REQUEST)
+        
+        else:
+            user = User.objects.create_user(email = emaillll, username = usernameeee, password = passwordddd)
+            user.save()
+
+            return JsonResponse({
+                "Message":f"User {usernameeee} registered successfully"
+            }, status = status.HTTP_201_CREATED)
+        
+
+@csrf_exempt
+def login(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "Message":"Method not supported",
+            "Status":"Failed"
+        },status = status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    else:
+        data = json.loads(request.body)
+        usernameeee = data['username']
+        passwordddd = data['password']
+
+        if not usernameeee or not passwordddd:
+            return JsonResponse({
+                "Message":"Inputs Fields should not be empty"
+            }, status = status.HTTP_400_BAD_REQUEST)
+        
+        else:
+            user = authenticate(request, username = usernameeee, password = passwordddd)
+
+            if user is not None:
+                refresf = RefreshToken.for_user(user)
+
+                return JsonResponse({
+                    "access-token":str(refresf.access_token),
+                    "refresh-token":str(refresf)
+                })
+
 
