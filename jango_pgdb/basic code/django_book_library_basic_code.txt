@@ -5,15 +5,48 @@ import json
 from .models import *
 
 # Create your views here.
-@csrf_exempt
+@api_view(['POST'])
+#@permission_classes([permissions.IsAuthenticated])
 def createAuthor(request):
-    my_json = json.loads(request.body)
-    nameComingFromPostman=my_json['name']
-    author = Author(name = nameComingFromPostman)
-    author.save()
-    return JsonResponse({
-        "Message":f"{nameComingFromPostman} saved in author table"
-    })
+    try:
+        if request.user.username == "":
+            raise Exception("user is not signed in")
+        if request.user.canCreateAuthor == False:
+            raise Exception("User is not authorised")
+        else:
+            requestBodyToDict = json.loads(request.body)
+
+            try:
+                emailFromPostman = requestBodyToDict['email']
+
+                checkEmailExists = Author.objects.filter(email = emailFromPostman).exists()
+
+                if checkEmailExists == True:
+                    raise Exception("Author is already added to the database")
+                else:
+                    nameFromPostmanBody = requestBodyToDict['name']
+                    email = requestBodyToDict['email']
+
+                    savingNameToDb = Author(name = nameFromPostmanBody, email=email)
+                    savingNameToDb.save()
+
+                    return JsonResponse({
+                        "message":f"{nameFromPostmanBody} added to Author table"
+                    })
+
+            except Exception as ex:
+                return JsonResponse({
+                    "message":str(ex),
+                    "status":"failed"
+                }, status = status.HTTP_409_CONFLICT)
+
+            
+
+    except Exception as ex:
+        return JsonResponse({
+            "message":str(ex),
+            "status":'falied'
+        }, status = status.HTTP_401_UNAUTHORIZED)
 
 @csrf_exempt
 def createBooks(request):
@@ -87,6 +120,7 @@ def register(request):
         emaillll = data['email']
         usernameeee = data['username']
         passwordddd = data['password']
+        canCreateAutor = data["canCreateAuthor"]
 
         if not usernameeee or not emaillll or not passwordddd:
             return JsonResponse({
@@ -94,8 +128,16 @@ def register(request):
             }, status = status.HTTP_400_BAD_REQUEST)
         
         else:
-            user = User.objects.create_user(email = emaillll, username = usernameeee, password = passwordddd)
+            user = User.objects.create_user(email = emaillll, username = usernameeee, password = passwordddd, canCreateAuthor = canCreateAutor)
             user.save()
+
+            send_mail(
+            "Congratualations",
+            "We are so happy to have you onboard.",
+            settings.EMAIL_HOST_USER,
+            [email],
+            fail_silently=False,
+            )
 
             return JsonResponse({
                 "Message":f"User {usernameeee} registered successfully"

@@ -131,3 +131,16 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Host for sending e-mail.
+EMAIL_HOST = 'smtp.elasticemail.com'
+
+# Port for sending e-mail.
+EMAIL_PORT = 2525
+
+# Optional SMTP authentication information for EMAIL_HOST.
+EMAIL_HOST_USER = 'kc234.marolix@gmail.com'
+EMAIL_HOST_PASSWORD = 'B1EC835D528E67C8D73E971C1028500BD945'
+EMAIL_USE_TLS = False
